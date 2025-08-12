@@ -23,33 +23,20 @@ app.use((req, res, next) => {
   }
 });
 
-const API_PREFIX = "/api";
-
-// /api/* -> TARGET/api/* (für Login, etc.)
-app.use(API_PREFIX, (req, res) => {
-  // Wichtig: Express entfernt den Mount-Pfad. Also wieder /api davor setzen:
-  req.url = API_PREFIX + req.url;   // z.B. aus "/login" wird "/api/login"
-
-  proxy.web(req, res, { target: TARGET }, (err) => {
-    console.error("proxy error:", err);
-    res.statusCode = 502;
-    res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify({ error: "proxy_failed", detail: String(err) }));
-  });
-});
-
-// Alle anderen Requests weiterleiten (für /scrape-linkedin, /predict-batch, /predict, etc.)
-app.use("*", (req, res) => {
-  proxy.web(req, res, { target: TARGET }, (err) => {
-    console.error("proxy error:", err);
-    res.statusCode = 502;
-    res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify({ error: "proxy_failed", detail: String(err) }));
-  });
-});
-
-// Healthcheck
+// Healthcheck - muss VOR dem allgemeinen Routing stehen
 app.get("/", (_req, res) => res.json({ ok: true, target: TARGET }));
+
+// Alle Requests weiterleiten (einschließlich /api/* und alle anderen)
+app.use("*", (req, res) => {
+  console.log(`Proxying ${req.method} ${req.url} to ${TARGET}`);
+  
+  proxy.web(req, res, { target: TARGET }, (err) => {
+    console.error("proxy error:", err);
+    res.statusCode = 502;
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ error: "proxy_failed", detail: String(err) }));
+  });
+});
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`proxy up on ${PORT}, target=${TARGET}`));
