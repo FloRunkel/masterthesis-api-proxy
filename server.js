@@ -9,13 +9,22 @@ const proxy = httpProxy.createProxyServer({
   ignorePath: false
 });
 
-const API_PREFIX = "/api";
+// CORS-Middleware hinzufügen
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Preflight-Requests behandeln
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
-// /api/* -> TARGET/api/*
-app.use(API_PREFIX, (req, res) => {
-  // Wichtig: Express entfernt den Mount-Pfad. Also wieder /api davor setzen:
-  req.url = API_PREFIX + req.url;   // z.B. aus "/login" wird "/api/login"
-
+// Alle Requests weiterleiten, nicht nur /api/*
+app.use("*", (req, res) => {
   proxy.web(req, res, { target: TARGET }, (err) => {
     console.error("proxy error:", err);
     res.statusCode = 502;
