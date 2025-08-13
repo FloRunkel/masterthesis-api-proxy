@@ -1,7 +1,7 @@
 import express from "express";
 import httpProxy from "http-proxy";
 
-const TARGET = process.env.TARGET || "http://masterthesis-backend-lb-736874312333.eu-central-1.elb.amazonaws.com:8080";
+const TARGET = process.env.TARGET || "http://masterthesis-backend-lb-1641888944.eu-central-1.elb.amazonaws.com:8080";
 
 const app = express();
 const proxy = httpProxy.createProxyServer({
