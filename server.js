@@ -7,7 +7,6 @@ const app = express();
 const proxy = httpProxy.createProxyServer({
   changeOrigin: true,
   ignorePath: false,
-  // WICHTIG: Diese Optionen hinzufügen
   preserveHeaderKeyCase: true,
   xfwd: true
 });
@@ -28,30 +27,9 @@ app.use((req, res, next) => {
 // Healthcheck
 app.get("/", (_req, res) => res.json({ ok: true, target: TARGET }));
 
-const API_PREFIX = "/api";
-
-// /api/* -> TARGET/api/* (für Login, etc.)
-app.use(API_PREFIX, (req, res) => {
-  console.log(`Proxying API ${req.method} ${req.url} to ${TARGET}${API_PREFIX}${req.url}`);
-  
-  // URL korrekt setzen
-  const originalUrl = req.url;
-  req.url = API_PREFIX + originalUrl;
-  
-  proxy.web(req, res, { target: TARGET }, (err) => {
-    console.error("proxy error:", err);
-    res.statusCode = 502;
-    res.setHeader("content-type", "application/json");
-    res.end(JSON.stringify({ error: "proxy_failed", detail: String(err) }));
-  });
-});
-
-// Alle anderen Requests weiterleiten
+// Alle Requests weiterleiten (alle haben jetzt /api Prefix)
 app.use("*", (req, res) => {
   console.log(`Proxying ${req.method} ${req.url} to ${TARGET}${req.url}`);
-  
-  // WICHTIG: Original-URL beibehalten
-  const originalUrl = req.url;
   
   proxy.web(req, res, { target: TARGET }, (err) => {
     console.error("proxy error:", err);
