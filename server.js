@@ -27,8 +27,8 @@ app.use((req, res, next) => {
 // Healthcheck
 app.get("/", (_req, res) => res.json({ ok: true, target: TARGET }));
 
-// Alle Requests weiterleiten (alle haben jetzt /api Prefix)
-app.use("*", (req, res) => {
+// Alle Requests explizit weiterleiten (alle HTTP-Methoden)
+app.all("*", (req, res) => {
   console.log(`Proxying ${req.method} ${req.url} to ${TARGET}${req.url}`);
 
   proxy.web(req, res, { target: TARGET }, (err) => {
